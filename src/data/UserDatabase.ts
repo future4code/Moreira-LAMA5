@@ -22,16 +22,19 @@ export class UserDatabase extends BaseDatabase {
         })
         .into(UserDatabase.TABLE_NAME);
     } catch (error) {
-      throw new Error(error.sqlMessage || error.message);
+      throw new Error(error.message);
     }
   }
 
   public async getUserByEmail(email: string): Promise<User> {
-    const result = await this.getConnection()
-      .select("*")
-      .from(UserDatabase.TABLE_NAME)
-      .where({ email });
-
-    return User.toUserModel(result[0]);
+    try {
+      const result = await this.getConnection()
+        .select("*")
+        .from(UserDatabase.TABLE_NAME)
+        .where({ email });
+      return User.toUserModel(result[0]);
+    } catch (error) {
+      throw new Error(error.message);
+    }
   }
 }
