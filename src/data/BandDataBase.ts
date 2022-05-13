@@ -24,14 +24,13 @@ export class BandDatabase extends BaseDatabase {
     }
   }
 
-  public async getBandByName(name: string): Promise<Band> {
+  public async getBandByNameAndResponsible(name: string, responsible: string): Promise<Band> | undefined {
     try {
       const result = await this.getConnection()
-        .select("name")
+        .select("name", "responsible")
         .from(BandDatabase.TABLE_NAME)
-        .where({ name });
-     
-      return Band.toBandModel(result[0]);
+        .where({ name, responsible });
+       return result[0];
     } catch (error) {
       throw new Error(error.sqlMessage || error.message);
     }

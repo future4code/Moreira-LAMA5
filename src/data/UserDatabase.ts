@@ -26,15 +26,16 @@ export class UserDatabase extends BaseDatabase {
     }
   }
 
-  public async getUserByEmail(email: string): Promise<User> {
+  public async getUserByEmail(email: string): Promise<User> | undefined {
     try {
       const result = await this.getConnection()
-        .select("*")
+        .select("email")
         .from(UserDatabase.TABLE_NAME)
         .where({ email });
-      return User.toUserModel(result[0]);
+         return result[0]
     } catch (error) {
-      throw new Error(error.message);
+          throw new Error(error.sqlMessage || error.message);
     }
   }
 }
+   // return User.toUserModel(result[0]); //p pegar o user no modelo que eu quero quando fetch dados para mostrar

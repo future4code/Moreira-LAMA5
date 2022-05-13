@@ -7,19 +7,30 @@ import { Authenticator } from "../services/Authenticator";
 export class UserBusiness {
   async createUser(user: UserInputDTO) {
     try {
+      const userDatabase = new UserDatabase();
       const idGenerator = new IdGenerator();
       const id = idGenerator.generate();
-
       const hashManager = new HashManager();
       const hashPassword = await hashManager.hash(user.password);
+      const authenticator = new Authenticator();
+      const accessToken = authenticator.generateToken({
+        id: id,
+        role: user.role,
+      });
+      const registeredUser = await userDatabase.getUserByEmail(user.email);
 
-      const userDatabase = new UserDatabase();
-      // const registeredUser = await userDatabase.getUserByEmail(user.email);
+      //validations
+      if (registeredUser) {
+        throw new Error("User is already registered");
+      }
+      if (!user.email || !user.name || !user.password || !user.role) {
+        throw new Error("Invalid fiedls");
+      }
+      if (user.email.indexOf("@") === -1) {
+        throw new Error("Invalid email");
+      }
 
-      // if (registeredUser) {
-      //   throw new Error("User is already registered");
-      // }
-
+      //creating user
       await userDatabase.createUser(
         id,
         user.email,
@@ -28,19 +39,7 @@ export class UserBusiness {
         User.stringToUserRole(user.role)
       );
 
-      const authenticator = new Authenticator();
-      const accessToken = authenticator.generateToken({
-        id: id,
-        role: user.role,
-      });
-
-      if (!user.email || !user.name || !user.password || !user.role) {
-        throw new Error("Invalid fiedls");
-      }
-      if (user.email.indexOf("@") === -1) {
-        throw new Error("Invalid email");
-      }
-
+      //returning token
       return accessToken;
     } catch (error) {
       throw new Error(error.message);
