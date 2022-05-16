@@ -3,6 +3,7 @@ import { UserDatabase } from "../data/UserDatabase";
 import { IdGenerator } from "../services/IdGenerator";
 import { HashManager } from "../services/HashManager";
 import { Authenticator } from "../services/Authenticator";
+import { BaseError } from "../error/BaseError";
 
 export class UserBusiness {
 
@@ -19,25 +20,39 @@ export class UserBusiness {
 
         const authenticator = new Authenticator();
         const accessToken = authenticator.generateToken({ id, role: user.role });
-
+        
         return accessToken;
     }
 
-    async getUserByEmail(user: LoginInputDTO) {
+    async login(input: LoginInputDTO) {
+        try {
+        const { password, email } = input
+
+        if(!password || !email){
+            throw new Error("Os campos não foram preenchidos corretamente");
+        }
 
         const userDatabase = new UserDatabase();
-        const userFromDB = await userDatabase.getUserByEmail(user.email);
+        const verifyUser = await userDatabase.getUserByEmail(input.email);
 
+        if(typeof verifyUser !== "object"){
+            throw new Error("Usuario não encontrado");
+        }
+       
         const hashManager = new HashManager();
-        const hashCompare = await hashManager.compare(user.password, userFromDB.getPassword());
+        const hashCompare = await hashManager.compare(password, verifyUser.getPassword());
 
         const authenticator = new Authenticator();
-        const accessToken = authenticator.generateToken({ id: userFromDB.getId(), role: userFromDB.getRole() });
+        const accessToken = authenticator.generateToken({ id: verifyUser.getId(), role: verifyUser.getRole() });
 
         if (!hashCompare) {
             throw new Error("Invalid Password!");
         }
 
         return accessToken;
+        } catch (error) {
+            throw new Error(error.message || error.sqlMessage);
+        }
     }
+    
 }
